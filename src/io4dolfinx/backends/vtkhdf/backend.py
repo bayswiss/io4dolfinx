@@ -1190,23 +1190,32 @@ def write_data(
         assert isinstance(timestamps, np.ndarray)
         assert isinstance(time, float)
         time_exists = np.flatnonzero(np.isclose(timestamps, time))
-
+        if len(time_exists) > 1:
+            raise ValueError("Time-step has been written multiple times")
+        pdo_u = _create_dataset(
+            pdo,
+            array_data.name,
+            shape=(1,),
+            dtype=np.int64,
+            chunks=True,
+            maxshape=(None,),
+            mode=h5_mode,
+            resize=False,
+        )
         if len(time_exists) == 1:
-            # If mesh time-step exists, update the data offsets for that step
             idx = time_exists[0]
-            pdo_u = _create_dataset(
-                pdo,
-                array_data.name,
-                shape=(1,),
-                dtype=np.int64,
-                chunks=True,
-                maxshape=(None,),
-                mode=h5_mode,
-                resize=False,
-            )
-            pdo_u[idx] = dataset.shape[0] - array_data.global_shape[0]
         elif len(time_exists) == 0:
             # No mesh written at step, update mesh offsets
+            # Geometry has to be time-dependent
+            num_points = block["NumberOfPoints"]
+            num_points.resize(len(timestamps) + 1, axis=0)
+            num_points[-1] = num_points[-2]
+            # Even if topology cannot be time dep at the moment, number of cells
+            # must be updated
+            num_cells = block["NumberOfCells"]
+            num_cells.resize(len(timestamps) + 1, axis=0)
+            num_cells[-1] = num_cells[-2]
+
             steps.attrs.create("NSteps", block["Steps"].attrs["NSteps"] + 1)
             step_vals = _create_dataset(
                 steps,
@@ -1219,26 +1228,38 @@ def write_data(
                 resize=True,
             )
             step_vals[-1] = time
+            idx = step_vals.size - 1
             for key in [
                 "PartOffsets",
                 "NumberOfParts",
                 "PointOffsets",
                 "CellOffsets",
                 "ConnectivityIdOffsets",
-                "CellDataOffsets",
-                "PointDataOffsets",
             ]:
-                if key in steps.keys():
-                    comp = steps[key]
-                    if isinstance(comp, h5py.Group):
-                        for dname, dset in comp.items():
-                            if dname != array_data.name and key != f"{extension}DataOffsets":
-                                dset.resize(dset.size + 1, axis=0)
-                                dset[-1] = dset[-2]
-                    elif isinstance(comp, h5py.Dataset):
-                        comp.resize(comp.size + 1, axis=0)
-                        comp[-1] = comp[-2]
-                    else:
-                        raise NotImplementedError(f"Ubsupported type {type(comp)}")
+                comp = steps[key]
+                comp.resize(steps.attrs["NSteps"], axis=0)
+                if comp.size > 1:
+                    comp[-1] = comp[-2]
         else:
             raise ValueError(f"Time step found multiple times in {filename}")
+
+        # Update offsets for current variable
+        pdo_u.resize(steps.attrs["NSteps"], axis=0)
+        pdo_u[idx] = dataset.shape[0] - array_data.global_shape[0]
+
+        # Point and cell data of all other variables has to be updated to be synced
+        for key in [
+            "CellDataOffsets",
+            "PointDataOffsets",
+        ]:
+            comp = steps[key]
+            num_steps = steps.attrs["NSteps"]
+            for dname, dset in comp.items():
+                # Only resize other data arrays
+                if dname != array_data.name:
+                    # Only resize if it hasn't already been resized
+                    if dset.size != num_steps:
+                        dset.resize(num_steps, axis=0)
+                        # Only update data if we are further than first time step
+                        if dset.size > 1:
+                            dset[-1] = dset[-2]
