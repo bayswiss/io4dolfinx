@@ -249,12 +249,12 @@ def reconstruct_mesh(mesh: dolfinx.mesh.Mesh, coordinate_element_degree: int) ->
     )
     # Could use create_geometry here when things are fixed
     geom = dolfinx.mesh.Geometry(
-        mesh.geometry._cpp_object.__class__(
+        type(mesh.geometry._cpp_object)(
             geom_imap, geom_dofmap, coordinate_element._cpp_object, x, original_input_indices
         )
     )
 
     # Create new mesh
     new_top = mesh.topology
-    cpp_mesh = mesh._cpp_object.__class__(mesh.comm, new_top._cpp_object, geom._cpp_object)
+    cpp_mesh = type(mesh._cpp_object)(mesh.comm, new_top._cpp_object, geom._cpp_object)
     return dolfinx.mesh.Mesh(cpp_mesh, ufl.Mesh(new_c_el))
