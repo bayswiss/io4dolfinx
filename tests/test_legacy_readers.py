@@ -112,6 +112,8 @@ def test_legacy_function(backend):
     if not dolfinx.has_petsc4py:
         pytest.skip("dolfinx not configured with PETSc4py")
 
+    from dolfinx.fem.petsc import LinearProblem
+
     uh = dolfinx.fem.Function(V)
     if "petsc_options_prefix" in inspect.signature(LinearProblem.__init__).parameters.keys():
         extra_options = {"petsc_options_prefix": "legacy_test"}
@@ -140,6 +142,8 @@ def test_read_legacy_function_from_checkpoint(backend):
     path = (pathlib.Path("legacy") / "mesh_checkpoint.h5").absolute()
     if not path.exists():
         pytest.skip(f"{path} does not exist")
+
+    from dolfinx.fem.petsc import LinearProblem
 
     mesh = read_mesh_from_legacy_h5(path, comm, "/Mesh/mesh", backend=backend)
 
