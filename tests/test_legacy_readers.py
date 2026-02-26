@@ -109,10 +109,8 @@ def test_legacy_function(backend):
     f = ufl.conditional(ufl.gt(x[0], 0.5), x[1], 2 * x[0])
     L = ufl.inner(f, v) * ufl.dx
 
-    try:
-        from dolfinx.fem.petsc import LinearProblem
-    except ImportError:
-        pytest.skip("dolfinx.fem.petsc.LinearProblem not available")
+    if not dolfinx.has_petsc4py:
+        pytest.skip("dolfinx not configured with PETSc4py")
 
     uh = dolfinx.fem.Function(V)
     if "petsc_options_prefix" in inspect.signature(LinearProblem.__init__).parameters.keys():
