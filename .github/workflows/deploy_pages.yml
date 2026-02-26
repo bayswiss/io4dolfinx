@@ -39,21 +39,21 @@ jobs:
     steps:
       - name: Download docs artifact
         # docs artifact is uploaded by build-docs job
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: docs
           path: "./public"
 
       - name: Download code coverage report artifact
         # docs artifact is uploaded by build-docs job
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: code-coverage-report-stable
           path: "./public/code-coverage-report-stable"
 
       - name: Download code coverage report artifact
         # docs artifact is uploaded by build-docs job
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: code-coverage-report-nightly
           path: "./public/code-coverage-report-nightly"
