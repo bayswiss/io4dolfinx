@@ -14,7 +14,6 @@ import dolfinx
 import numpy as np
 import pytest
 import ufl
-from dolfinx.fem.petsc import LinearProblem
 
 from io4dolfinx import (
     read_cell_data,
@@ -110,6 +109,11 @@ def test_legacy_function(backend):
     f = ufl.conditional(ufl.gt(x[0], 0.5), x[1], 2 * x[0])
     L = ufl.inner(f, v) * ufl.dx
 
+    try:
+        from dolfinx.fem.petsc import LinearProblem
+    except ImportError:
+        pytest.skip("dolfinx.fem.petsc.LinearProblem not available")
+
     uh = dolfinx.fem.Function(V)
     if "petsc_options_prefix" in inspect.signature(LinearProblem.__init__).parameters.keys():
         extra_options = {"petsc_options_prefix": "legacy_test"}
@@ -148,6 +152,11 @@ def test_read_legacy_function_from_checkpoint(backend):
     x = ufl.SpatialCoordinate(mesh)
     f = ufl.conditional(ufl.gt(x[0], 0.5), x[1], 2 * x[0])
     L = ufl.inner(f, v) * ufl.dx
+
+    try:
+        from dolfinx.fem.petsc import LinearProblem
+    except ImportError:
+        pytest.skip("dolfinx.fem.petsc.LinearProblem not available")
 
     uh = dolfinx.fem.Function(V)
     if "petsc_options_prefix" in inspect.signature(LinearProblem.__init__).parameters.keys():
