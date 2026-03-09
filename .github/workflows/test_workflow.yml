@@ -24,13 +24,13 @@ jobs:
 
       # Note: We assume the caller workflow has already uploaded these artifacts
       - name: Download legacy mpich data
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: legacy_mpich
           path: ./legacy
 
       - name: Download legacy checkpoint mpich data
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: legacy_checkpoint_mpich
           path: ./legacy_checkpoint
