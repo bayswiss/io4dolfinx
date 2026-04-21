@@ -240,7 +240,7 @@ def read_function_from_legacy_h5(
     """
 
     # Make sure we use the HDF5File and check that the file is present
-    filename = pathlib.Path(filename).with_suffix(".h5")
+    filename = pathlib.Path(filename)
     if not filename.is_file():
         raise FileNotFoundError(f"File {filename} does not exist")
 
