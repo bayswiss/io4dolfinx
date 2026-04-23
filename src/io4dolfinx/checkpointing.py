@@ -19,6 +19,7 @@ import numpy.typing as npt
 import ufl
 from packaging.version import Version
 
+from . import compat
 from .backends import FileMode, ReadMode, get_backend
 from .comm_helpers import (
     send_and_recv_cell_perm,
@@ -157,7 +158,8 @@ def write_meshtags(
     local_start = mesh.comm.exscan(num_saved_tag_entities, op=MPI.SUM)
     local_start = local_start if mesh.comm.rank != 0 else 0
     global_num_tag_entities = mesh.comm.allreduce(num_saved_tag_entities, op=MPI.SUM)
-    dof_layout = mesh.geometry.cmap.create_dof_layout()
+
+    dof_layout = compat.cmap(mesh).create_dof_layout()
     if hasattr(dof_layout, "num_entity_closure_dofs"):
         num_dofs_per_entity = dof_layout.num_entity_closure_dofs(dim)
     else:

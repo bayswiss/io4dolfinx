@@ -14,6 +14,7 @@ from mpi4py import MPI
 import dolfinx
 import numpy as np
 
+from . import compat
 from .backends import FileMode, get_backend
 from .comm_helpers import numpy_to_mpi
 from .structures import FunctionData, MeshData
@@ -178,7 +179,7 @@ def create_original_mesh_data(mesh: dolfinx.mesh.Mesh) -> MeshData:
     del _geometry, recv_nodes
 
     assert local_node_range[1] - local_node_range[0] == geometry.shape[0]
-    cmap = mesh.geometry.cmap
+    cmap = compat.cmap(mesh)
 
     cell_to_output_comm.Free()
     geometry_to_owner_comm.Free()
