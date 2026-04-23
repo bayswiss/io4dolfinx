@@ -3,7 +3,7 @@ import dolfinx.mesh
 
 def cmap(mesh) -> dolfinx.fem.element.CoordinateElement:
     # Due to https://github.com/FEniCS/dolfinx/pull/4169
-    try:
+    if callable(mesh.geometry.cmap):
         return mesh.geometry.cmap()
-    except TypeError:
+    else:
         return mesh.geometry.cmap
