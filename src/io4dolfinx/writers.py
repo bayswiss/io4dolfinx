@@ -13,6 +13,7 @@ import dolfinx
 import numpy as np
 from packaging.version import Version
 
+from . import compat
 from .backends import FileMode, get_backend
 from .structures import FunctionData, MeshData
 
@@ -40,7 +41,8 @@ def prepare_meshdata_for_storage(mesh: dolfinx.mesh.Mesh, store_partition_info: 
     num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
     num_cells_global = mesh.topology.index_map(mesh.topology.dim).size_global
     cell_range = mesh.topology.index_map(mesh.topology.dim).local_range
-    cmap = mesh.geometry.cmap
+    cmap = compat.cmap(mesh)
+
     geom_layout = cmap.create_dof_layout()
     if hasattr(geom_layout, "num_entity_closure_dofs"):
         num_dofs_per_cell = geom_layout.num_entity_closure_dofs(mesh.topology.dim)
@@ -94,8 +96,8 @@ def prepare_meshdata_for_storage(mesh: dolfinx.mesh.Mesh, store_partition_info: 
         local_topology_pos=cell_range,
         num_cells_global=num_cells_global,
         cell_type=mesh.topology.cell_name(),
-        degree=mesh.geometry.cmap.degree,
-        lagrange_variant=mesh.geometry.cmap.variant,
+        degree=cmap.degree,
+        lagrange_variant=cmap.variant,
         store_partition=store_partition_info,
         partition_processes=partition_processes,
         ownership_array=ownership_array,
