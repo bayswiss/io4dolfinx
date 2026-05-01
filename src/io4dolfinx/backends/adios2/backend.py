@@ -445,14 +445,15 @@ def write_meshtags(
         adios_file.file.Put(topology_var, data.indices, adios2.Mode.Sync)
 
         # Write meshtag values
+        vals = np.array(data.values)
         values_var = adios_file.io.DefineVariable(
             data.name + "_values",
-            data.values,
+            vals,
             shape=[data.num_entities_global],
             start=[data.local_start],
             count=[len(data.indices)],
         )
-        adios_file.file.Put(values_var, data.values, adios2.Mode.Sync)
+        adios_file.file.Put(values_var, vals, adios2.Mode.Sync)
 
         # Write meshtag dim
         adios_file.io.DefineAttribute(data.name + "_dim", np.array([data.dim], dtype=np.uint8))
