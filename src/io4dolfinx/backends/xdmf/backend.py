@@ -123,7 +123,7 @@ def read_point_data(
         for time_node in time_steps:
             step_node = time_node.find(".//Time")
             assert isinstance(step_node, ElementTree.Element)
-            if step_node.attrib["Value"] == time:
+            if np.isclose(float(step_node.attrib["Value"]), float(time)):
                 time_found = True
                 break
         func_node = time_node.find(f".//Attribute[@Name='{name}']")
