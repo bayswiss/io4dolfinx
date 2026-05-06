@@ -16,7 +16,6 @@ from dolfinx.io.gmsh import (
 from ...structures import ArrayData, FunctionData, MeshData, MeshTagsData, ReadMeshData
 from ...utils import check_file_exists
 from .. import FileMode, ReadMode
-from .. import ReadMode
 
 read_mode = ReadMode.serial
 
@@ -43,22 +42,9 @@ def read_mesh_data(
     read_from_partition: bool = False,
     backend_args: dict[str, Any] | None = None,
 ) -> ReadMeshData:
-    """Read mesh data from file.
-
-    Args:
-        filename: Path to file to read from
-        comm: MPI communicator used in storage
-        time: Time stamp associated with the mesh to read
-        read_from_partition: Whether to read partition information
-        backend_args: Arguments to backend
-
-    Returns:
-        Internal data structure for the mesh data read from file
-    """
-    assert not read_from_partition
+    if read_from_partition:
+        raise RuntimeError("Cannot read partition data with nastran")
     check_file_exists(filename)
-    backend_args = get_default_backend_args(backend_args)
-    gdim = backend_args["gdim"]
 
     if comm.rank == 0:
         gmsh.initialize()
@@ -77,7 +63,7 @@ def read_mesh_data(
 
             dims = [e[0] for e in elements]
             if len(dims) != len(set(dims)):
-                raise RuntimeError(
+                raise ValueError(
                     f"Multiple element types share a topological dimension in {filename}."
                 )
             _, num_nodes, gmsh_type = max(elements, key=lambda e: e[0])
@@ -87,7 +73,6 @@ def read_mesh_data(
 
         cell_type, degree = _gmsh_to_cells[gmsh_type]
         comm.bcast((cell_type, degree, num_nodes), root=0)
-
     else:
         cell_type, degree, num_nodes = comm.bcast(None, root=0)
         cells = np.empty((0, num_nodes), dtype=np.int64)
@@ -98,7 +83,7 @@ def read_mesh_data(
     return ReadMeshData(
         cells=cells[:, perm],
         cell_type=cell_type,
-        x=x[:, :gdim],
+        x=x,
         lvar=int(basix.LagrangeVariant.equispaced),
         degree=degree,
     )
