@@ -24,7 +24,6 @@ read_mode = ReadMode.serial
 
 def get_default_backend_args(arguments: dict[str, Any] | None) -> dict[str, Any]:
     args = arguments or {}
-    args.setdefault("gdim", 3)
     return args
 
 
@@ -47,6 +46,19 @@ def read_mesh_data(
     read_from_partition: bool = False,
     backend_args: dict[str, Any] | None = None,
 ) -> ReadMeshData:
+    """Read mesh data from file.
+
+    Args:
+        filename: Path to file to read from
+        comm: MPI communicator used in storage
+        time: Time stamp associated with the mesh to read
+        read_from_partition: Whether to read partition information
+        backend_args: Arguments to backend
+
+    Returns:
+        Internal data structure for the mesh data read from file
+    """
+
     if read_from_partition:
         raise RuntimeError("Cannot read partition data with nastran")
     check_file_exists(filename)
