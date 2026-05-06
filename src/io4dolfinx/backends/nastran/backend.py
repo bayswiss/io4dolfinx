@@ -1,39 +1,44 @@
-import warnings
-import gmsh
-import basix
-import dolfinx
-import numpy as np
-import numpy.typing as npt
-
 from pathlib import Path
 from typing import Any
+
 from mpi4py import MPI
 
+import basix
+import dolfinx
+import gmsh
+import numpy as np
+import numpy.typing as npt
 from dolfinx.io.gmsh import (
-    extract_geometry, extract_topology_and_markers,
-    cell_perm_array, _gmsh_to_cells,
+    _gmsh_to_cells,
+    cell_perm_array,
+    extract_geometry,
+    extract_topology_and_markers,
 )
+
 from ...structures import ArrayData, FunctionData, MeshData, MeshTagsData, ReadMeshData
 from ...utils import check_file_exists
 from .. import FileMode, ReadMode
 
 read_mode = ReadMode.serial
 
+
 def get_default_backend_args(arguments: dict[str, Any] | None) -> dict[str, Any]:
     args = arguments or {}
     args.setdefault("gdim", 3)
     return args
 
+
 def _promote_entities_to_physical_groups(model) -> None:
     """Promote gmsh elementary entities to physical groups.
 
-    Gmsh reads PSOLID/PSHELL as elementary entities only. 
-    extract_topology_and_markers only sees physical groups, 
+    Gmsh reads PSOLID/PSHELL as elementary entities only.
+    extract_topology_and_markers only sees physical groups,
     so we promote every entity, reusing the entity
     tag as the physical group tag (preserving Nastran PIDs).
     """
     for dim, tag in model.getEntities():
         model.addPhysicalGroup(dim=dim, tags=[tag], tag=tag)
+
 
 def read_mesh_data(
     filename: Path | str,
@@ -55,7 +60,7 @@ def read_mesh_data(
             if not topologies:
                 raise ValueError(f"No elements found in {filename}.")
             x = extract_geometry(gmsh.model)
-            
+
             elements = []
             for gmsh_type in topologies:
                 _, dim, _, n_nodes, *_ = gmsh.model.mesh.getElementProperties(gmsh_type)
@@ -67,7 +72,7 @@ def read_mesh_data(
                     f"Multiple element types share a topological dimension in {filename}."
                 )
             _, num_nodes, gmsh_type = max(elements, key=lambda e: e[0])
-            cells = topologies[gmsh_type]["topology"].astype(np.int64, copy=False)     
+            cells = topologies[gmsh_type]["topology"].astype(np.int64, copy=False)
         finally:
             gmsh.finalize()
 
@@ -87,7 +92,6 @@ def read_mesh_data(
         lvar=int(basix.LagrangeVariant.equispaced),
         degree=degree,
     )
-
 
 
 def read_point_data(
@@ -211,7 +215,6 @@ def read_function_names(
     raise NotImplementedError("The nastran backend cannot write function_names.")
 
 
-
 def write_mesh(
     filename: Path | str,
     comm: MPI.Intracomm,
@@ -285,8 +288,7 @@ def read_meshtags_data(
 
     if name not in _PROPERTY_TO_DIM:
         raise ValueError(
-            f"Unsupported meshtag name {name!r}. "
-            f"Expected one of: {sorted(_PROPERTY_TO_DIM)}."
+            f"Unsupported meshtag name {name!r}. Expected one of: {sorted(_PROPERTY_TO_DIM)}."
         )
     target_dim = _PROPERTY_TO_DIM[name]
 
